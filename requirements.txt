@@ -19,6 +19,7 @@ openai>=1.0.0
 
 # Веб-фреймворки (выберите один)
 Flask>=2.3.0
+flask_cors
 # ИЛИ
 # fastapi>=0.100.0
 # uvicorn[standard]>=0.23.0
