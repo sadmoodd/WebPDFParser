@@ -2,6 +2,7 @@
 @section("title", "Обработка ЕГРН выписок")
 
 @section("content")
+
     <!-- Основной контент -->
     <div class="container mt-4">
         <!-- Заголовок и описание -->
@@ -323,18 +324,52 @@
         });
 
         // Имитация обработки (замените на реальный API)
-        function simulateProcessing(fileObj) {
-            return new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    // 90% успешной обработки для демонстрации
-                    if (Math.random() > 0.1) {
-                        resolve();
-                    } else {
-                        reject(new Error('Ошибка обработки'));
-                    }
-                }, 2000);
-            });
+        async function simulateProcessing(fileObj) {
+            const formData = new FormData();
+            files.forEach(f => formData.append('files[]', f.file));
+            
+            // CSRF токен в FormData (ДЛЯ CURL тоже работает)
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            formData.append('_token', csrfToken);
+
+            try {
+                // ✅ ПРАВИЛЬНЫЙ fetch с await
+                const response = await fetch('/api/process-egrn', {
+                    method: 'POST',
+                    body: formData  // НЕ headers с FormData!
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || data.message || 'Серверная ошибка');
+                }
+
+                // ✅ Показываем результат ГЛОБАЛЬНО (не внутри цикла!)
+                resultsContent.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle"></i> ${data.message}
+                    </div>
+                `;
+                resultsButtons.innerHTML = `
+                    <a href="${data.excel_url}" class="btn btn-success" target="_blank">
+                        <i class="bi bi-file-excel"></i> Скачать Excel
+                    </a>
+                    <a href="/api/download/${new URL(data.excel_url).pathname.split('/').pop()}" class="btn btn-primary" download>
+                        <i class="bi bi-download"></i> Скачать через Laravel
+                    </a>
+                `;
+                resultsButtons.style.display = 'block';
+
+                return data;  // ✅ Возвращаем успех
+                
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;  // ❌ Перебрасываем ошибку наверх
+            }
         }
+
+
 
         // Инициализация
         updateFileList();

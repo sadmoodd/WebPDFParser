@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 from pathlib import Path
 import json
+import pandas as pd
+from datetime import datetime
 import os
 
 app = Flask(__name__)
@@ -59,10 +61,22 @@ def parse_egrn():
         #     pdf_files=[Path(p) for p in pdf_paths],
         #     custom_columns=columns if columns else None
         # )
-        result = "OK!"
+        results_dir = Path('result')
+        results_dir.mkdir(exist_ok=True)
+        excel_path = results_dir / f"result_{int(datetime.now().timestamp())}.xlsx"
+
+        df = pd.DataFrame({"кадастровый_номер": ["77:01:0001:1"], "адрес": ["Москва"]})
+        df.to_excel(excel_path, index=False)
+
+        result = {
+            "excel_path": excel_path,
+            "total_rows": 1, 
+            "successful_count": 1,
+            "failed_count": 0
+        }
         
         excel_path = result.get('excel_path')
-        
+        print("OK")
         return jsonify({
             "success": True,
             "excel_path": str(excel_path),
@@ -78,7 +92,7 @@ def parse_egrn():
 
 
 app.route("/download/<filename>", methods=['GET'])
-def download_file(filename: str):
+def download_file(filename):
     """
     Endpoint для загрузки таблицы Excel
     """

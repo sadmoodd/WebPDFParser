@@ -1,3 +1,5 @@
 .venv/
 data/input
 .env
+result/
+backend/php-iconv/
