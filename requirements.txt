@@ -5,6 +5,7 @@ PyPDF2>=3.0.0
 # OCR функциональность (опционально)
 pytesseract>=0.3.10
 Pillow>=10.0.0
+pdf2image
 
 # Работа с данными и Excel
 pandas>=2.0.0
