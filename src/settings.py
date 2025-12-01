@@ -87,8 +87,10 @@ MAX_TEXT_FOR_LLM = int(os.getenv('MAX_TEXT_FOR_LLM', 90000))
 
 LLM_MODEL = os.getenv('LLM_MODEL', 'sonar-pro')
 LLM_TEMPERATURE = float(os.getenv('LLM_TEMPERATURE', 0))  # 0 = детерминированный
-LLM_MAX_TOKENS = int(os.getenv('LLM_MAX_TOKENS', 4000))
+LLM_MAX_TOKENS = int(os.getenv('LLM_MAX_TOKENS', 10000))
 LLM_TIMEOUT = int(os.getenv('LLM_TIMEOUT', 60))  # секунды
+
+HF_MODEL = os.getenv('HF_MODEL', "DeepSeek-ai/DeepSeek-VL-7B-chat")
 
 # ════════════════════════════════════════════════════════════════════════════
 # ПАРАМЕТРЫ EXCEL

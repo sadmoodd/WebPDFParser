@@ -107,20 +107,20 @@ def flatten_data(data: Dict[str, Any], pdf_filename: str) -> Dict[str, Any]:
     # ✅ ФИНАЛЬНЫЙ словарь - ВСЁ БЕЗОПАСНО!
     flat_row = {
         'Адрес, комплекс': safe_str(data.get('address')),
-        'Наименование здания': '-',
+        'Наименование здания': safe_str(data.get('literal')),
         'Литера / Строение': safe_str(data.get('literal')),
-        'Кадастр. номер ЗУ': cadastral_zu,
-        'Кадастр. номер здания': f"ЗУ: {safe_str(data.get('cadastral_quarter', '-'))}",
+        'Кадастр. номер ЗУ':  f"{safe_str(data.get('cadastral_quarter', '-'))}",
+        'Кадастр. номер здания': cadastral_zu,
         '№ помещения': safe_str(data.get('room_number')),
         'Этаж': safe_str(data.get('floor')),
         'Площадь (м²)': safe_str(data.get('area')),
         'Предполагаемое назначение': safe_str(data.get('permitted_use')),
         'Статус': safe_str(data.get('status')),
-        'Арендатор': safe_str(rental_data.get('tenant')),
+        'Арендатор': safe_str(data.get('tenant')),
         'Подтверждение из PDF': 'Автоматически',
         'Примечания и расхождения': safe_str(data.get('notes')),
-        'Собственник': safe_str(owner_data.get('full_name')),
-        'Обременение (аренда)': f"{safe_str(rental_data.get('rent_type'))} до {safe_str(rental_data.get('period_end'))}".strip() or '-',
+        'Собственник': safe_str(data.get('owner')),
+        'Обременение (аренда)': f"{safe_str(rental_data.get('rent_type'))} до {safe_str(rental_data.get('period_end'), 'Бессрочно')}".strip() or '-',
         'PDF-источник': pdf_filename
     }
 

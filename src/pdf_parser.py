@@ -20,19 +20,7 @@ logger = setup_logger(__name__)
 
 def clean_egrn_text(text: str) -> str:
     """Очистка текста от мусора."""
-    if not text:
-        return ""
-    
-    # Удаляем КУВИ и служебные строки
-    text = re.sub(r'\d{2}\.\d{2}\.\d{4}г\. № КУВИ-[\d/-]+', '', text)
-    text = re.sub(r'Лист №? ?\d+', '', text)
-    text = re.sub(r'Раздел \d(\.\d)?', '', text)
-    text = re.sub(r'Всего листов.*?\n', '', text)
-    text = re.sub(r'ДОКУМЕНТ ПОДПИСАН.*', '', text, flags=re.DOTALL | re.IGNORECASE)
-    
-    # Удаляем пустые строки
-    lines = [line.strip() for line in text.split('\n') if line.strip()]
-    return '\n'.join(lines)
+    return text
 
 
 def extract_text_pdfplumber(pdf_path: Path) -> str:
@@ -74,45 +62,50 @@ def extract_text_pypdf2(pdf_path: Path) -> str:
         return ""
 
 
-def extract_text_ocr(pdf_path: Path, max_pages: int = 5) -> str:
-    """Попытка 3: OCR через Tesseract (для сканов)"""
-    text_content = []
+def extract_text_ocr(pdf_path: Path, max_pages: int = 4) -> str:
+    """🔥 OCR + АВТО-ПОВОРОТ всех страниц!"""
     try:
-        # Конвертируем PDF в изображения
-        images = pdf2image.convert_from_path(pdf_path, dpi=150, first_page=1, last_page=max_pages)
+        import pdf2image
+        import pytesseract
+        from PIL import Image, ImageEnhance
         
-        logger.info(f"📸 OCR обработка {len(images)} страниц...")
+        # ✅ КОНВЕРТИРУЕМ с поворотом на 0°!
+        images = pdf2image.convert_from_path(
+            str(pdf_path), 
+            dpi=300,
+            first_page=1, 
+            last_page=max_pages,
+            fmt='RGB',
+        )
         
-        for page_num, image in enumerate(images):
+        logger.info(f"📸 OCR {len(images)} стр. DPI=300")
+        text_parts = []
+        
+        for i, image in enumerate(images):
             try:
-                # Оптимизируем изображение для OCR
-                # Преобразуем в оттенки серого
-                image_bw = image.convert('L')
+                # ✅ ПОВЕРНУТЬ ЕЩЁ РАЗ (на всякий случай)
+                image = image.rotate(0, expand=True)  # 0° альбом
                 
-                # Увеличиваем контраст
-                from PIL import ImageEnhance
-                enhancer = ImageEnhance.Contrast(image_bw)
-                image_bw = enhancer.enhance(2)
+                # Контраст
+                img = ImageEnhance.Contrast(image.convert('L')).enhance(2.0)
                 
-                # Запускаем OCR с русским языком
-                text = pytesseract.image_to_string(image_bw, lang='rus')
+                # PSM=6 для блоков текста
+                config = '--oem 3 --psm 6'
+                page_text = pytesseract.image_to_string(img, lang='rus', config=config)
                 
-                if text and len(text.strip()) > 20:
-                    text_content.append(text)
-                    logger.info(f"  Страница {page_num + 1}: {len(text)} символов")
+                if len(page_text.strip()) > 10:
+                    text_parts.append(page_text)
+                    logger.info(f"  📄 стр.{i+1}: {len(page_text)} симв.")
             except Exception as e:
-                logger.warning(f"  ⚠️ OCR ошибка на странице {page_num + 1}: {e}")
-                continue
+                logger.warning(f"  ⚠️ стр.{i+1}: {e}")
         
-        result = "\n".join(text_content)
-        if result and len(result.strip()) > 50:
-            logger.info(f"✅ OCR: {len(result)} символов")
+        result = clean_egrn_text("\n".join(text_parts))
+        if len(result) > 50:
+            logger.info(f"✅ OCR + поворот: {len(result)} симв.")
             return result
-        return ""
-        
     except Exception as e:
-        logger.error(f"❌ OCR критическая ошибка: {e}")
-        return ""
+        logger.error(f"❌ OCR: {e}")
+    return ""
 
 
 def extract_text(pdf_path: Path) -> str:

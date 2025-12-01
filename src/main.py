@@ -44,6 +44,8 @@ def process_single_file(pdf_path: Path) -> Dict:
 
         # 2. Отправляем в LLM
         data = extract_egrn_data(text)
+        print(text)
+        print(f"LEN OF TEXT {len(text)}")
         if "error" in data:
             result["error"] = data["error"]
             return result
