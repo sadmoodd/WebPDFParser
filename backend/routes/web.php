@@ -10,5 +10,5 @@ Route::get('/about', [AboutHelpController::class, "about"])->name("about");
 Route::get("/help", [AboutHelpController::class, "help"])->name("help");
 
 
-Route::post('/api/parse-egrn', [EgrnController::class, 'processEgrn']);
+Route::post('/api/parse-egrn', [EgrnController::class, 'processEgrn'])->name("egrn.process");
 Route::get('/api/download/{filename}', [EgrnController::class, 'downloadResult']);

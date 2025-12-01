@@ -58,7 +58,7 @@
     <!-- Навигация -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="#">
+            <a class="navbar-brand" href="/">
                 <i class="bi bi-house-check"></i>
                 ЕГРН Обработчик
             </a>

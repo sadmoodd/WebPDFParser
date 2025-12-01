@@ -158,7 +158,7 @@ class EgrnController extends Controller
 
     public function downloadResult($filename)
     {
-        $flaskUrl = $this->flaskApiUrl . '/download/' . $filename;
+        $flaskUrl = $this->flaskApiUrl . '/api/download/' . $filename;
         $response = Http::timeout(60)->get($flaskUrl);
         
         if (!$response->successful()) {

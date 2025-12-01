@@ -115,7 +115,14 @@
                     </div>
                     <div class="progress mt-3" style="display: none;" id="progressBar">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                             role="progressbar" style="width: 0%">0%</div>
+                             role="progressbar" style="width: 0%" id="progressBarInner">0%</div>
+                    </div>
+                    
+                    <!-- Кнопка отмены во время обработки -->
+                    <div class="mt-3" id="cancelBtnContainer" style="display: none;">
+                        <button class="btn btn-danger w-100" id="cancelBtn">
+                            <i class="bi bi-stop-circle"></i> Отмена операции
+                        </button>
                     </div>
                 </div>
             </div>
@@ -131,7 +138,9 @@
                     <div id="resultsContent">
                         <p class="text-muted text-center">Результаты появятся здесь после обработки</p>
                     </div>
-                    <div class="d-grid gap-2 mt-3" id="resultsButtons" style="display: none;"></div>
+                    <div class="d-grid gap-2 mt-3" id="resultsButtons" style="display: none;">
+                        <!-- Кнопки результатов будут добавлены динамически -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -144,6 +153,7 @@
 <script>
 let files = [];
 let processing = false;
+let eventSource = null; // Для отмены SSE
 
 // Элементы DOM
 const dropZone = document.getElementById('dropZone');
@@ -154,10 +164,18 @@ const processBtn = document.getElementById('processBtn');
 const clearAllBtn = document.getElementById('clearAllBtn');
 const processingStatus = document.getElementById('processingStatus');
 const progressBar = document.getElementById('progressBar');
-const progressBarInner = document.querySelector('#progressBar .progress-bar');
+const progressBarInner = document.getElementById('progressBarInner');
 const resultsContent = document.getElementById('resultsContent');
 const resultsButtons = document.getElementById('resultsButtons');
 const filesCount = document.getElementById('filesCount');
+const cancelBtnContainer = document.getElementById('cancelBtnContainer');
+const cancelBtn = document.getElementById('cancelBtn');
+
+// Статистические элементы
+const totalFilesEl = document.getElementById('totalFiles');
+const processedFilesEl = document.getElementById('processedFiles');
+const successFilesEl = document.getElementById('successFiles');
+const errorFilesEl = document.getElementById('errorFiles');
 
 // Drag & Drop события
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -194,17 +212,61 @@ function handleFiles(fileList) {
                 status: 'pending'
             });
         } else {
-            alert(`Файл ${file.name} слишком большой (${(file.size/1024/1024).toFixed(1)}MB). Максимум 5MB!`);
+            alert(`Файл ${file.name} слишком большой (${(file.size/1024/1024).toFixed(1)}MB). Максимум 10MB!`);
         }
     });
     updateUI();
 }
 
+// ✅ НОВАЯ ОБРАБОТКА - полный сброс
+function resetAll() {
+    files = [];
+    processing = false;
+    if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+    }
+    progressBar.style.display = 'none';
+    cancelBtnContainer.style.display = 'none';
+    resultsButtons.style.display = 'none';
+    resultsContent.innerHTML = '<p class="text-muted text-center">Результаты появятся здесь после обработки</p>';
+    processingStatus.innerHTML = '<p class="text-muted text-center">Ожидание загрузки файлов...</p>';
+    updateUI();
+}
+
+// ✅ ОТМЕНА ОПЕРАЦИИ - переход на главную
+function cancelOperation() {
+    if (eventSource) {
+        eventSource.close();
+        eventSource = null;
+    }
+    window.location.href = "{{ route('index') }}";
+}
+
+// Обновление статистики
+function updateStats() {
+    const total = files.length;
+    const processed = files.filter(f => f.status !== 'pending').length;
+    const success = files.filter(f => f.status === 'success').length;
+    const error = files.filter(f => f.status === 'error').length;
+    
+    totalFilesEl.textContent = total;
+    processedFilesEl.textContent = processed;
+    successFilesEl.textContent = success;
+    errorFilesEl.textContent = error;
+    
+    // Обновление прогресс-бара
+    if (total > 0) {
+        const progress = (processed / total * 100).toFixed(1);
+        progressBarInner.style.width = `${progress}%`;
+        progressBarInner.textContent = `${progress}%`;
+    }
+}
 
 // Обновление интерфейса
 function updateUI() {
-    document.getElementById('totalFiles').textContent = files.length;
     filesCount.textContent = files.length;
+    updateStats();
     
     if (files.length === 0) {
         emptyFileList.style.display = 'block';
@@ -214,7 +276,7 @@ function updateUI() {
     } else {
         emptyFileList.style.display = 'none';
         fileItems.innerHTML = files.map((file, index) => `
-            <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+            <div class="d-flex justify-content-between align-items-center p-2 border-bottom file-item">
                 <div>
                     <i class="bi bi-file-pdf-fill text-danger me-2"></i>
                     <strong>${file.name}</strong>
@@ -265,7 +327,10 @@ clearAllBtn.addEventListener('click', () => {
     updateUI();
 });
 
-// ✅ ГЛАВНАЯ КНОПКА - РЕАЛЬНЫЙ API вызов!
+// ✅ КНОПКА ОТМЕНЫ
+cancelBtn.addEventListener('click', cancelOperation);
+
+// ✅ ГЛАВНАЯ КНОПКА ОБРАБОТКИ
 processBtn.addEventListener('click', async function() {
     if (processing || files.length === 0) return;
     
@@ -273,27 +338,26 @@ processBtn.addEventListener('click', async function() {
     processBtn.disabled = true;
     clearAllBtn.disabled = true;
     progressBar.style.display = 'block';
+    cancelBtnContainer.style.display = 'block';
     
     // Обновляем статусы всех файлов на "processing"
     files.forEach(f => f.status = 'processing');
     updateUI();
     
+    processingStatus.innerHTML = `
+        <div class="alert alert-info">
+            <i class="bi bi-arrow-repeat"></i> Отправка файлов в Python API...
+        </div>
+    `;
+    
     const formData = new FormData();
     files.forEach((f, index) => {
-        console.log(`📁 Добавляем файл ${index + 1}: ${f.name}`); // ДИАГНОСТИКА
-        formData.append('files[]', f.file, f.name);  // ✅ f.file + имя файла!
+        console.log(`📁 Добавляем файл ${index + 1}: ${f.name}`);
+        formData.append('files[]', f.file, f.name);
     });
-    // CSRF токен
     formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
     
     try {
-        processingStatus.innerHTML = `
-            <div class="alert alert-info">
-                <i class="bi bi-arrow-repeat"></i> Отправка файлов в Python API...
-            </div>
-        `;
-        
-        // ✅ ПРАВИЛЬНЫЙ МАРШРУТ из routes/web.php
         const response = await fetch('/api/parse-egrn', {
             method: 'POST',
             body: formData
@@ -326,16 +390,20 @@ processBtn.addEventListener('click', async function() {
             </div>
         `;
         
-        // Кнопка скачивания
+        // ✅ КНОПКИ РЕЗУЛЬТАТОВ с НОВОЙ ОБРАБОТКОЙ
         resultsButtons.innerHTML = `
             <a href="/api/download/${data.excel_filename}" class="btn btn-success w-100 mb-2" download>
                 <i class="bi bi-file-earmark-excel"></i> Скачать Excel (${data.file_size})
             </a>
-            <button class="btn btn-outline-secondary w-100" onclick="clearResults()">
+            <button class="btn btn-primary w-100 mb-2" onclick="resetAll()">
                 <i class="bi bi-arrow-clockwise"></i> Новая обработка
             </button>
+            <a href="{{ route('index') }}" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-house"></i> На главную
+            </a>
         `;
         resultsButtons.style.display = 'block';
+        cancelBtnContainer.style.display = 'none';
         
     } catch (error) {
         console.error('Ошибка:', error);
@@ -347,6 +415,7 @@ processBtn.addEventListener('click', async function() {
                 <i class="bi bi-exclamation-triangle-fill"></i> ❌ ${error.message}
             </div>
         `;
+        cancelBtnContainer.style.display = 'none';
     }
     
     processing = false;
@@ -354,9 +423,9 @@ processBtn.addEventListener('click', async function() {
     updateUI();
 });
 
+// ✅ Функция очистки результатов (устаревшая, теперь используется resetAll())
 function clearResults() {
-    resultsButtons.style.display = 'none';
-    resultsContent.innerHTML = '<p class="text-muted text-center">Результаты появятся здесь после обработки</p>';
+    resetAll();
 }
 
 // Инициализация
@@ -387,6 +456,17 @@ updateUI();
 }
 .file-item:last-child {
     border-bottom: none;
+}
+#progressBarInner {
+    transition: width 0.3s ease;
+}
+#cancelBtn {
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
 }
 </style>
 @endsection

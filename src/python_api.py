@@ -81,7 +81,7 @@ def parse_egrn():
 def download_result(filename):
     """Скачивание Excel файла."""
     excel_path = OUTPUT_DIR / filename
-    
+    print(excel_path)
     logger.info(f"📥 Скачивание: {filename}")
     
     if not excel_path.exists():
