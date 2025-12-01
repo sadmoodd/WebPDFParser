@@ -24,6 +24,7 @@ load_dotenv()
 # ════════════════════════════════════════════════════════════════════════════
 
 PERPLEXITY_API_KEY = os.getenv('PERPLEXITY_API_KEY')
+HF_API_KEY = os.getenv("HF_API_KEY")
 
 if not PERPLEXITY_API_KEY:
     raise ValueError(

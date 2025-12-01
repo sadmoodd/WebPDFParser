@@ -107,12 +107,12 @@ def flatten_data(data: Dict[str, Any], pdf_filename: str) -> Dict[str, Any]:
     # ✅ ФИНАЛЬНЫЙ словарь - ВСЁ БЕЗОПАСНО!
     flat_row = {
         'Адрес, комплекс': safe_str(data.get('address')),
-        'Наименование здания': f"ЗУ: {safe_str(data.get('cadastral_quarter', '-'))}",
+        'Наименование здания': '-',
         'Литера / Строение': safe_str(data.get('literal')),
         'Кадастр. номер ЗУ': cadastral_zu,
-        'Кадастр. номер здания': objects_str,
-        '№ помещения': '-',
-        'Этаж': '-',
+        'Кадастр. номер здания': f"ЗУ: {safe_str(data.get('cadastral_quarter', '-'))}",
+        '№ помещения': safe_str(data.get('room_number')),
+        'Этаж': safe_str(data.get('floor')),
         'Площадь (м²)': safe_str(data.get('area')),
         'Предполагаемое назначение': safe_str(data.get('permitted_use')),
         'Статус': safe_str(data.get('status')),

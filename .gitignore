@@ -5,7 +5,7 @@ result/
 backend/php-iconv/
 src/__pycache__
 logs
-shared_uploads/egrn_1764500827_test.PDF
+shared_uploads
 shared_uploads/egrn_1764503412_ikdHw8GP.pdf
 shared_uploads/egrn_1764503790_7nlNK5jR.pdf
 shared_uploads/egrn_1764503901_HVr4Lp6Q.pdf
@@ -53,3 +53,5 @@ shared_uploads/egrn_1764509161_Xzb2TZ9t.pdf
 shared_uploads/egrn_1764509161_XzMfdIdT.pdf
 shared_uploads/egrn_1764509161_YmTZHg0H.pdf
 shared_uploads/egrn_1764509161_YNDonk5c.pdf
+shared_uploads/egrn_1764578700_h4n2scCx.pdf
+shared_uploads/egrn_1764578700_zk4rPqRi.pdf
