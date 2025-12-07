@@ -6,6 +6,7 @@ backend/php-iconv/
 src/__pycache__
 logs
 shared_uploads
+
 shared_uploads/egrn_1764503412_ikdHw8GP.pdf
 shared_uploads/egrn_1764503790_7nlNK5jR.pdf
 shared_uploads/egrn_1764503901_HVr4Lp6Q.pdf
@@ -55,3 +56,15 @@ shared_uploads/egrn_1764509161_YmTZHg0H.pdf
 shared_uploads/egrn_1764509161_YNDonk5c.pdf
 shared_uploads/egrn_1764578700_h4n2scCx.pdf
 shared_uploads/egrn_1764578700_zk4rPqRi.pdf
+data/output/EGRN_Result_20251201_150557.xlsx
+data/output/EGRN_Result_20251201_153101.xlsx
+data/output/EGRN_Result_20251201_154606.xlsx
+data/output/EGRN_Result_20251203_125127.xlsx
+data/output/EGRN_Result_20251203_125315.xlsx
+data/output/EGRN_Result_20251203_125520.xlsx
+data/output/EGRN_Result_20251203_125552.xlsx
+data/output/EGRN_Result_20251203_125607.xlsx
+data/output/EGRN_Result_20251203_125738.xlsx
+data/output/table_writer_PRO_TEST.xlsx
+data/output/table_writer_test.xlsx
+data/output/test_output.xlsx

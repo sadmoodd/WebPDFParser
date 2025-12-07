@@ -44,7 +44,6 @@ def process_single_file(pdf_path: Path) -> Dict:
 
         # 2. Отправляем в LLM
         data = extract_egrn_data(text)
-        print(text)
         print(f"LEN OF TEXT {len(text)}")
         if "error" in data:
             result["error"] = data["error"]
@@ -108,7 +107,7 @@ def process_files_batch(
 
     # Генерируем имя файла
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    output_filename = f"EGRN_Result_{timestamp}.xlsx"
+    output_filename = f"Таблица_Сводная_{timestamp}.xlsx"
     output_path = OUTPUT_DIR / output_filename
     
     # Сохраняем
